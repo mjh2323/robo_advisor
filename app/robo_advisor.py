@@ -32,16 +32,18 @@ latest_day = dates[0] #assuming latest date is first, might need to make sorting
 latest_close = parsed_response["Time Series (Daily)"][latest_day]["4. close"]
 
 
-
 high_prices = []
+low_prices = []
 
 
 for date in dates: 
     high_price = tsd[latest_day]["2. high"]
+    low_price = tsd[latest_day]["3. low"]
     high_prices.append(float(high_price))
+    low_prices.append(float(low_price))
 
 recent_high = max(high_prices)
-
+recent_low = min(low_prices)
 
 
 # INFO OUTPUTS 
@@ -59,8 +61,8 @@ print("REQUEST AT: 2018-02-20 02:00pm")
 print("-------------------------")
 print(f"LATEST DAY: {last_refreshed}")
 print(f"LATEST CLOSE: {to_usd(float(latest_close))}")
-print(f"RECENT HIGH: {to_usd(float(latest_close))}")
-print("RECENT LOW: $99,000.00")
+print(f"RECENT HIGH: {to_usd(float(recent_high))}")
+print(f"RECENT LOW: {to_usd(float(recent_low))}")
 print("-------------------------")
 print("RECOMMENDATION: BUY!")
 print("RECOMMENDATION REASON: TODO")
