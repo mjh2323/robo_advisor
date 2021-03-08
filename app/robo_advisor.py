@@ -48,7 +48,6 @@ substring = "Error"
 full_string = str(parsed_response)
 
 
-
 try:
     if len(symbol) < 2:
         raise ValueError()
