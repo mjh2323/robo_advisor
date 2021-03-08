@@ -1,6 +1,8 @@
 # this is the "app/robo_advisor.py" file
 
+import csv
 import requests
+import os
 import json 
 
 def to_usd(my_price):
@@ -49,8 +51,30 @@ recent_low = min(low_prices)
 # INFO OUTPUTS 
 
 
+#csv_file_path = "data/prices.csv"
+csv_file_path = os.path.join(os.path.dirname(__file__),"..", "data", "prices.csv")
 
+csv_headers = ["timestamp", "open", "high", "low", "close", "volume"]
 
+with open(csv_file_path, "w") as csv_file:
+    writer = csv.DictWriter(csv_file, fieldnames=csv_headers)
+    writer.writeheader()
+
+    writer.writerow({
+        "timestamp":
+        "open": 
+        "high":
+        "low":
+        "close": 
+        "volume":
+    })
+    writer.writerow({
+        "timestamp":
+        "open": 
+        "high":
+        "low":
+        "close": 
+        "volume":
 
 
 print("-------------------------")
@@ -67,6 +91,8 @@ print("-------------------------")
 print("RECOMMENDATION: BUY!")
 print("RECOMMENDATION REASON: TODO")
 print("-------------------------")
+print(f"WRITING DATA TO CSV: {csv_file_path}")
 print("HAPPY INVESTING!")
 print("-------------------------")
+
 
