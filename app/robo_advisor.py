@@ -2,28 +2,57 @@
 
 import csv
 import requests
+from dotenv import load_dotenv
 import os
 import json 
+
+load_dotenv() #this loads contents of .env file into script environment
+
+# DEFINE FUNCTIONS 
 
 def to_usd(my_price):
     return "${0:,.2f}".format(my_price)
 
-# INFO INPUTS
+def ticker_numbers(inputString):
+    return any(char.isdigit() for char in inputString)
 
-request_url = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=IBM&apikey=demo"
+
+
+
+
+### INFO INPUTS
+
+api_key = os.environ.get("ALPHANTAGE_API_KEY")
+
+symbol = "MSFT"#input("Please enter the stock symbol (ex. MSFT): ") 
+symbol = symbol.upper() #puts letts in upper case
+
+
+request_url = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}IBM&apikey={api_key}"
+
 response = requests.get(request_url)
-#print(type(response))
-#print(response.status_code)
-#print(response.text)
 
+substring = "Error"
 
 parsed_response = json.loads(response.text)
+full_string = str(parsed_response)
+
+
+
+try:
+    if len(symbol) < 3:
+        raise ValueError()
+    elif len(symbol) > 5:
+        raise ValueError()
+    elif ticker_numbers(symbol) == True:
+        raise ValueError()
+except ValueError:
+    print("That ticker symbol is invalid. Please enter the correct symbol: ")
+    exit()
+
+
 
 last_refreshed = parsed_response["Meta Data"]["3. Last Refreshed"]
-
-
-
-#breakpoint()
 
 tsd = parsed_response["Time Series (Daily)"]
 
@@ -31,7 +60,7 @@ dates = list(tsd.keys())
 
 latest_day = dates[0] #assuming latest date is first, might need to make sorting step 
 
-latest_close = parsed_response["Time Series (Daily)"][latest_day]["4. close"]
+latest_close = tsd[latest_day]["4. close"]
 
 
 high_prices = []
@@ -48,10 +77,9 @@ recent_high = max(high_prices)
 recent_low = min(low_prices)
 
 
-# INFO OUTPUTS 
+### INFO OUTPUTS 
 
 
-#csv_file_path = "data/prices.csv"
 csv_file_path = os.path.join(os.path.dirname(__file__),"..", "data", "prices.csv")
 
 csv_headers = ["timestamp", "open", "high", "low", "close", "volume"]
@@ -70,7 +98,9 @@ with open(csv_file_path, "w") as csv_file:
             "volume": daily_prices["5. volume"]
         }) 
 
-        
+
+now = datetime.now()
+date_time_str = now.strftime("%B %d, %Y %H: %M")      
    
 
 
@@ -78,7 +108,7 @@ print("-------------------------")
 print("SELECTED SYMBOL: XYZ")
 print("-------------------------")
 print("REQUESTING STOCK MARKET DATA...")
-print("REQUEST AT: 2018-02-20 02:00pm")
+print("REQUEST AT: {date_time_str}")
 print("-------------------------")
 print(f"LATEST DAY: {last_refreshed}")
 print(f"LATEST CLOSE: {to_usd(float(latest_close))}")
