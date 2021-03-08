@@ -1,10 +1,14 @@
 # this is the "app/robo_advisor.py" file
 
 import csv
-import requests
-from dotenv import load_dotenv
-import os
 import json 
+import os
+
+from dotenv import load_dotenv
+import requests
+
+
+
 
 load_dotenv() #this loads contents of .env file into script environment
 
@@ -32,10 +36,14 @@ request_url = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symb
 
 response = requests.get(request_url)
 
-substring = "Error"
-
 parsed_response = json.loads(response.text)
+print(parsed_response.keys())
+substring = "Error"
 full_string = str(parsed_response)
+
+#last_refreshed = parsed_response["Meta Data"]["3. Last Refreshed"]
+
+#tsd = parsed_response["Time Series (Daily)"]
 
 
 
@@ -52,9 +60,8 @@ except ValueError:
 
 
 
-last_refreshed = parsed_response["Meta Data"]["3. Last Refreshed"]
 
-tsd = parsed_response["Time Series (Daily)"]
+
 
 dates = list(tsd.keys())
 
