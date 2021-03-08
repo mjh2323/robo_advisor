@@ -1,99 +1,108 @@
-# this is the "app/robo_advisor.py" file
+# robo_advisor.py
 
 import csv
-import json 
 import os
-
+import json
+import string
+from datetime import datetime
 from dotenv import load_dotenv
 import requests
 
-
-
-
 load_dotenv() #this loads contents of .env file into script environment
 
-# DEFINE FUNCTIONS 
+## Description and Defining Functions
 
 def to_usd(my_price):
-    return "${0:,.2f}".format(my_price)
+    """
+    Converts a numeric value to usd-formatted string, for printing and display purposes.
+    Param: my_price (int or float) like 4000.444444
+    Example: to_usd(4000.444444)
+    Returns: $4,000.44
+    """
+    return f"${my_price:,.2f}" #> $12,000.71
 
-def ticker_numbers(inputString):
+def ticker_symbol(inputString):
     return any(char.isdigit() for char in inputString)
 
 
+#
+# INFO INPUTS
+#
+
+symbol = input("Please input Stock ticker symbol (ex. MSFT): ") 
+symbol = symbol.upper() #PUTS LETTERS IN UPPERCASE 
 
 
+api_key = os.environ.get("ALPHAVANTAGE_API_KEY")
 
-### INFO INPUTS
+requests_url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey={api_key}"
 
-api_key = os.environ.get("ALPHANTAGE_API_KEY")
-
-symbol = "MSFT"#input("Please enter the stock symbol (ex. MSFT): ") 
-symbol = symbol.upper() #puts letts in upper case
-
-
-request_url = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}IBM&apikey={api_key}"
-
-response = requests.get(request_url)
+response = requests.get(requests_url)
 
 parsed_response = json.loads(response.text)
-print(parsed_response.keys())
+#print(parsed_response.keys())
+#print(type(parsed_response))
+
 substring = "Error"
+
 full_string = str(parsed_response)
-
-#last_refreshed = parsed_response["Meta Data"]["3. Last Refreshed"]
-
-#tsd = parsed_response["Time Series (Daily)"]
 
 
 
 try:
-    if len(symbol) < 3:
+    if len(symbol) < 2:
         raise ValueError()
     elif len(symbol) > 5:
         raise ValueError()
-    elif ticker_numbers(symbol) == True:
+    elif ticker_symbol(symbol) == True:
+        raise ValueError()
+    elif substring in full_string:
         raise ValueError()
 except ValueError:
-    print("That ticker symbol is invalid. Please enter the correct symbol: ")
+    print("Please enter a valid ticker symbol, like 'MSFT' or 'PTON'")
     exit()
 
 
+last_refreshed = parsed_response["Meta Data"]["3. Last Refreshed"]
 
+tsd = parsed_response["Time Series (Daily)"]
 
+dates = list(tsd.keys()) 
 
-
-dates = list(tsd.keys())
-
-latest_day = dates[0] #assuming latest date is first, might need to make sorting step 
+latest_day = dates[0]
 
 latest_close = tsd[latest_day]["4. close"]
 
 
 high_prices = []
+
 low_prices = []
 
-
-for date in dates: 
+for date in dates:
     high_price = tsd[latest_day]["2. high"]
     low_price = tsd[latest_day]["3. low"]
     high_prices.append(float(high_price))
     low_prices.append(float(low_price))
 
+# Finding max of all high prices
+# Finding min of all low prices
 recent_high = max(high_prices)
 recent_low = min(low_prices)
 
 
-### INFO OUTPUTS 
+#
+# INFO OUTPUTS
+#
 
+csv_file_path = os.path.join(os.path.dirname(__file__), "..", "data", "prices.csv")
 
-csv_file_path = os.path.join(os.path.dirname(__file__),"..", "data", "prices.csv")
+csv_headers = ["timestamp","open","high","low","close","volume"]
 
-csv_headers = ["timestamp", "open", "high", "low", "close", "volume"]
-
-with open(csv_file_path, "w") as csv_file:
+with open(csv_file_path, "w") as csv_file: # "w" means "open the file for writing"
     writer = csv.DictWriter(csv_file, fieldnames=csv_headers)
-    writer.writeheader()
+    writer.writeheader() # uses fieldnames set above
+    
+    # looping
     for date in dates:
         daily_prices = tsd[date]
         writer.writerow({
@@ -103,29 +112,38 @@ with open(csv_file_path, "w") as csv_file:
             "low": daily_prices["3. low"],
             "close": daily_prices["4. close"],
             "volume": daily_prices["5. volume"]
-        }) 
+            })
 
+high_contraint = float(recent_low)* 1.25
+
+if high_contraint > float(tsd[date]["4. close"]):
+    reccomendation = "Buy"
+    reasoning = "The closing price has jumped by at least 25% compared to its recent low."
+else:
+    reccomendation = "Don't Buy"
+    reasoning = "The closing price of {latest_close} has not risen by more than 25% above its recent low. We recommend not buying."
+    
 
 now = datetime.now()
-date_time_str = now.strftime("%B %d, %Y %H: %M")      
-   
+dt_string = now.strftime("%m/%d/%Y, %I:%M%p")
 
 
 print("-------------------------")
-print("SELECTED SYMBOL: XYZ")
+print(f"SELECTED SYMBOL: {symbol}")
 print("-------------------------")
 print("REQUESTING STOCK MARKET DATA...")
-print("REQUEST AT: {date_time_str}")
+print(f"REQUEST AT: {dt_string}") 
 print("-------------------------")
 print(f"LATEST DAY: {last_refreshed}")
 print(f"LATEST CLOSE: {to_usd(float(latest_close))}")
 print(f"RECENT HIGH: {to_usd(float(recent_high))}")
 print(f"RECENT LOW: {to_usd(float(recent_low))}")
 print("-------------------------")
-print("RECOMMENDATION: BUY!")
-print("RECOMMENDATION REASON: TODO")
+print(f"RECOMMENDATION: {reccomendation}") 
+print(f"RECOMMENDATION REASON: {reasoning}") 
 print("-------------------------")
-print(f"WRITING DATA TO CSV: {csv_file_path}")
+print(f"WRITING DATA TO CSV: {csv_file_path}") 
+print("-------------------------")
 print("HAPPY INVESTING!")
 print("-------------------------")
 
